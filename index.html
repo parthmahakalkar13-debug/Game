@@ -171,7 +171,7 @@ td { padding: 4px 8px; border-bottom: 1px solid rgba(255,255,255,.1); }
   border-color: var(--ac);
   box-shadow: 0 0 18px var(--ac);
 }
-/* Right Side Pedals & Actions (Arranged comfortably for right thumb) */
+/* Right Side Pedals & Actions */
 #btn-accel { right: 20px; bottom: 130px; width: 76px; height: 76px; font-size: 15px; }
 #btn-brake { right: 105px; bottom: 85px; width: 64px; height: 64px; font-size: 12px; }
 #btn-nitro  { right: 20px; bottom: 40px; width: 68px; height: 68px; background: rgba(255,62,165,0.22); border-color: rgba(255,62,165,0.5); color: var(--ac2); font-size: 12px; }
@@ -246,7 +246,7 @@ td { padding: 4px 8px; border-bottom: 1px solid rgba(255,255,255,.1); }
  <div class="sw" id="sw"></div>
  <br>
  <button id="go">START RACE</button>
- <p class="help">Use Left Virtual Joystick to steer and Right Buttons (GAS / NITRO / DRIFT) to race! Also supports keyboard & gamepads.</p>
+ <p class="help">Use Left Virtual Joystick to steer and Right Buttons (GAS / NITRO / DRIFT) to race! Nitro instantly doubles top speed and acceleration until depleted.</p>
 </div>
 
 <!-- Pause Overlay -->
@@ -351,7 +351,7 @@ function setup(){
  const n=S.opp+1;
  for(let k=0; k<n; k++){
   const isP=k==n-1, idx=40-k*3, lat=k%2?3.5:-3.5, p=pts[idx];
-  const c={m:makeCar(isP?COLORS[S.color]:COLORS[(S.color+1+k)%6],isP), x:p.x+sid[idx].x*lat, z:p.z+sid[idx].z*lat, h:hd[idx], vx:0, vz:0, vf:0, vl:0, st:0, roll:0, pitch:0, pvf:0, nitro:60, cool:false, nOn:false, th:0, br:0, rpm:1000, gear:1, idx, lap:0, finished:false, place:0, ai:!isP,
+  const c={m:makeCar(isP?COLORS[S.color]:COLORS[(S.color+1+k)%6],isP), x:p.x+sid[idx].x*lat, z:p.z+sid[idx].z*lat, h:hd[idx], vx:0, vz:0, vf:0, vl:0, st:0, roll:0, pitch:0, pvf:0, nitro:100, cool:false, nOn:false, th:0, br:0, rpm:1000, gear:1, idx, lap:0, finished:false, place:0, ai:!isP,
    skill:{easy:.78,medium:.88,hard:.97}[S.diff]*(.97+Math.random()*.06), lane:(k%3-1)*4.5, still:0, rank:k+1, prog:0};
   cars.push(c); if(isP) P=c;
  }
@@ -364,17 +364,29 @@ function step(c,i,dt){
  let fx=Math.sin(c.h), fz=Math.cos(c.h), vf=c.vx*fx+c.vz*fz;
  c.h+=c.st*2.3*clamp(vf/12,-1,1)/(1+(vf/55)**2)*(i.hb?1.6:1)*dt;
  fx=Math.sin(c.h); fz=Math.cos(c.h); vf=c.vx*fx+c.vz*fz; let vl=c.vx*fz-c.vz*fx;
- const nit=!!i.nit&&c.nitro>0&&!c.cool&&vf>2; c.nOn=nit; const vmax=nit?95:70;
- if(i.th>0&&vf<vmax) vf+=(42*(1-Math.max(vf,0)/vmax)+4)*(nit?2.4:1)*i.th*dt;
+
+ /* Nitro Mechanics: Doubles top speed & acceleration until depleted */
+ const nit=!!i.nit&&c.nitro>0&&!c.cool; c.nOn=nit;
+ const vmax=nit?140:70;
+ const accelMult=nit?3.5:1;
+
+ if(i.th>0&&vf<vmax) vf+=(42*(1-Math.max(vf,0)/vmax)+4)*accelMult*i.th*dt;
  vf-=vf*.04*dt+(vf>vmax?(vf-vmax)*1.8*dt:0);
  if(i.br>0){if(vf>1)vf-=58*i.br*dt;else vf=Math.max(vf-22*i.br*dt,-16)}
  if(i.hb)vf*=Math.exp(-.35*dt);
  vl*=Math.exp(-(i.hb?1.5:8)*dt);
- if(nit){c.nitro=Math.max(0,c.nitro-28*dt);if(c.nitro<=0)c.cool=true}else c.nitro=Math.min(100,c.nitro+(Math.abs(vl)>3&&vf>10?16:3)*dt);
- if(c.cool&&c.nitro>25)c.cool=false;
+
+ if(nit){
+  c.nitro=Math.max(0, c.nitro - 35*dt);
+  if(c.nitro<=0) c.cool=true;
+ } else {
+  c.nitro=Math.min(100, c.nitro + (Math.abs(vl)>3&&vf>10?16:5)*dt);
+  if(c.cool && c.nitro>=40) c.cool=false;
+ }
+
  c.vx=fx*vf+fz*vl; c.vz=fz*vf-fx*vl; c.x+=c.vx*dt; c.z+=c.vz*dt; c.vf=vf; c.vl=vl; c.th=i.th; c.br=i.br;
- let g=0; while(g<5&&vf>tops[g]) g++; const lo=g?tops[g-1]:0; c.gear=vf<-1?-1:g+1;
- c.rpm=1200+clamp((Math.abs(vf)-lo)/(tops[g]-lo),0,1)*6500+i.th*500;
+ let g=0; while(g<5&&vf>tops[g]* (nit?2:1)) g++; const lo=g?tops[g-1]:0; c.gear=vf<-1?-1:g+1;
+ c.rpm=1200+clamp((Math.abs(vf)-lo)/((tops[g]||95)*(nit?2:1)-lo),0,1)*6500+i.th*500;
 }
 
 function trk(c){
@@ -400,7 +412,7 @@ function aiIn(c){
  const err=wrap(Math.atan2(tx-c.x,tz-c.z)-c.h), tg=tgt[c.idx]*c.skill, o={steer:clamp(err*2.2,-1,1), th:0, br:0, hb:false, nit:false};
  if(c.finished){o.br=c.vf>6?.5:0; return o}
  if(c.vf<tg)o.th=1; else if(c.vf>tg+6) o.br=clamp((c.vf-tg)/25,.2,1);
- o.nit=S.diff!='easy'&&tgt[c.idx]>=64&&Math.abs(err)<.08&&c.nitro>(S.diff=='hard'?30:60);
+ o.nit=S.diff!='easy'&&tgt[c.idx]>=64&&Math.abs(err)<.08&&c.nitro>50;
  return o;
 }
 
@@ -476,8 +488,8 @@ function audioUpd(){
  if(!A) return;
  const t=A.x.currentTime, on=(state=='count'||state=='race')&&!paused;
  const fr=35+P.rpm*.03; A.o1.frequency.setTargetAtTime(fr,t,.05); A.o2.frequency.setTargetAtTime(fr*.5,t,.05); A.f.frequency.setTargetAtTime(500+P.rpm*.2+P.th*500,t,.05);
- A.g.gain.setTargetAtTime(on?.05+P.th*.06+(P.nOn?.04:0):0,t,.08);
- A.wg.gain.setTargetAtTime(on?Math.min(.2,Math.abs(P.vf)/80*.2):0,t,.1);
+ A.g.gain.setTargetAtTime(on?.05+P.th*.06+(P.nOn?.06:0):0,t,.08);
+ A.wg.gain.setTargetAtTime(on?Math.min(.25,Math.abs(P.vf)/100*.25):0,t,.1);
  A.sg.gain.setTargetAtTime(on&&Math.abs(P.vl)>4&&P.vf>8?Math.min(.04,Math.abs(P.vl)/10*.04):0,t,.05);
  A.m.gain.value=A.mute?0:S.vol;
 }
@@ -489,12 +501,12 @@ function cam(dt){
  if(state=='menu'){const a=tm*.35; camera.position.set(c.x+Math.cos(a)*8,2.2,c.z+Math.sin(a)*8); camera.lookAt(c.x,.8,c.z); fov=50;}
  else if(camMode==1){c.m.g.visible=false; camera.position.set(c.x+fx*.5,1.2,c.z+fz*.5); camera.lookAt(c.x+fx*20,1.1,c.z+fz*20); fov=75+sp*.12;}
  else{const d=(camMode==0?7.5:5)+sp*.03, h=camMode==0?2.7:1.8, k=snap?1:1-Math.exp(-dt*6);
-  camera.position.lerp(new V3(c.x-fx*d,h,c.z-fz*d),k); camera.lookAt(c.x+fx*12,1.2,c.z+fz*12); fov=64+sp*.14+(c.nOn?12:0);
+  camera.position.lerp(new V3(c.x-fx*d,h,c.z-fz*d),k); camera.lookAt(c.x+fx*12,1.2,c.z+fz*12); fov=64+sp*.14+(c.nOn?16:0);
  }
  snap=false; shake=Math.max(0,shake-dt*2.5);
  if(shake>0&&$('#hud').offsetParent){camera.position.x+=(Math.random()-.5)*shake*.6; camera.position.y+=(Math.random()-.5)*shake*.6;}
  camera.fov+=(fov-camera.fov)*Math.min(1,dt*5); camera.updateProjectionMatrix();
- $('#fx').style.opacity=state=='menu'?0:(c.nOn?.55:0);
+ $('#fx').style.opacity=state=='menu'?0:(c.nOn?.65:0);
  sky.position.copy(camera.position);
 }
 
@@ -514,7 +526,7 @@ function hud(){
  $('#time').textContent=fmt(raceT); $('#best').textContent=fmt(best);
  $('#spd').textContent=Math.round(Math.abs(P.vf)*u); $('#unit').textContent=S.units=='kmh'?'KM/H':'MPH';
  $('#gear').textContent=P.gear<0?'R':Math.abs(P.vf)<.5?'N':P.gear;
- $('#rpm i').style.width=clamp((P.rpm-1000)/7000,0,1)*100+'%'; $('#nit i').style.width=P.nitro+'%';
+ $('#rpm i').style.width=clamp((P.rpm-1000)/8000,0,1)*100+'%'; $('#nit i').style.width=P.nitro+'%';
  const wrong=state=='race'&&(P.vx*tan[P.idx].x+P.vz*tan[P.idx].z)<-3; show('#warn',wrong||hitT>0); $('#warn').textContent=hitT>0?'COLLISION':'WRONG WAY';
  mmc.clearRect(0,0,95,95); mmc.drawImage(mmb,0,0);
  cars.forEach(c=>{const q=mp(c.x,c.z); mmc.fillStyle=c===P?'#35e0ff':'#ff5470'; mmc.beginPath(); mmc.arc(q[0],q[1],c===P?4:2.5,0,TAU); mmc.fill()});
