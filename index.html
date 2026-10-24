@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Apex Nights</title>
+<title>Apex Nights - Mobile Edition</title>
 <style>
 :root {
   color-scheme: dark;
@@ -39,29 +39,31 @@ canvas#c {
   align-items: center;
   justify-content: center;
   gap: 14px;
-  background: radial-gradient(ellipse at center, rgba(5,6,14,.55), rgba(5,6,14,.95));
+  background: radial-gradient(ellipse at center, rgba(5,6,14,.65), rgba(5,6,14,.96));
   text-align: center;
-  padding: 16px;
+  padding: 20px;
   z-index: 50;
+  box-sizing: border-box;
+  overflow-y: auto;
 }
 .hide { display: none !important; }
 h1 {
   margin: 0;
-  font-size: clamp(36px, 7vw, 80px);
+  font-size: clamp(32px, 7vw, 72px);
   letter-spacing: .12em;
   font-weight: 800;
   font-style: italic;
 }
 h1 span { color: var(--ac); text-shadow: 0 0 24px var(--ac); }
-h2 { margin: 0; font-size: 36px; font-style: italic; }
-.sub { margin: 0; opacity: .7; letter-spacing: .3em; text-transform: uppercase; font-size: 11px; }
-.row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-width: 600px; }
+h2 { margin: 0; font-size: 32px; font-style: italic; }
+.sub { margin: 0; opacity: .7; letter-spacing: .25em; text-transform: uppercase; font-size: 11px; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-width: 550px; }
 label { font-size: 10px; letter-spacing: .15em; text-transform: uppercase; opacity: .9; display: flex; flex-direction: column; gap: 4px; align-items: stretch; }
 select, input[type=range] {
   background: rgba(255,255,255,.08);
   color: var(--tx);
   border: 1px solid rgba(255,255,255,.2);
-  padding: 7px 10px;
+  padding: 8px 12px;
   border-radius: 6px;
   font-size: 14px;
 }
@@ -69,51 +71,61 @@ button {
   background: linear-gradient(90deg, var(--ac), #3b82f6);
   color: #02101a;
   border: 0;
-  padding: 14px 34px;
+  padding: 14px 32px;
   font-weight: 800;
   letter-spacing: .15em;
-  border-radius: 4px;
-  font-size: 16px;
+  border-radius: 6px;
+  font-size: 15px;
   cursor: pointer;
-  transform: skewX(-10deg);
-  transition: transform 0.1s ease;
+  transform: skewX(-8deg);
+  box-shadow: 0 4px 15px rgba(53,224,255,0.3);
 }
-button.alt { background: rgba(255,255,255,.12); color: var(--tx); }
+button.alt { background: rgba(255,255,255,.12); color: var(--tx); box-shadow: none; }
 button:hover { filter: brightness(1.15); }
-button:active { transform: skewX(-10deg) scale(0.96); }
+button:active { transform: skewX(-8deg) scale(0.96); }
 .sw { display: flex; gap: 8px; }
-.sw i { width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; }
+.sw i { width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; }
 .sw i.on { border-color: #fff; box-shadow: 0 0 10px #fff; }
-.help { font-size: 11px; opacity: .6; max-width: 600px; margin: 0; line-height: 1.5; }
+.help { font-size: 11px; opacity: .6; max-width: 550px; margin: 0; line-height: 1.5; }
 
-/* HUD styling */
-#hud { position: fixed; inset: 0; pointer-events: none; z-index: 10; padding-top: env(safe-area-inset-top, 0px); }
+/* Mobile-First Non-Overlapping HUD Layout */
+#hud { position: fixed; inset: 0; pointer-events: none; z-index: 10; padding: env(safe-area-inset-top, 10px) 12px env(safe-area-inset-bottom, 10px) 12px; }
 .pn {
   position: absolute;
-  background: rgba(8,10,24,.65);
+  background: rgba(8,10,24,.75);
   border: 1px solid rgba(255,255,255,.15);
   border-radius: 10px;
-  padding: 8px 14px;
-  backdrop-filter: blur(4px);
+  padding: 6px 10px;
+  backdrop-filter: blur(6px);
+  box-sizing: border-box;
 }
-#tl { left: 14px; top: 14px; font-size: 13px; }
-#tl b { font-size: 30px; font-style: italic; color: var(--ac); }
-#tr { right: 14px; top: 14px; text-align: right; font-variant-numeric: tabular-nums; font-size: 13px; }
-#sp { right: 14px; bottom: 14px; text-align: right; min-width: 170px; pointer-events: auto; }
-#spd { font-size: 56px; font-weight: 800; font-style: italic; line-height: 1; font-variant-numeric: tabular-nums; }
-#unit { font-size: 11px; opacity: .7; letter-spacing: .2em; }
-#gear { font-size: 24px; font-weight: 800; color: var(--ac2); }
-.bar { height: 6px; background: rgba(255,255,255,.12); border-radius: 4px; overflow: hidden; margin-top: 5px; }
+
+/* Top Left: Minimap */
+#mm { left: 12px; top: 12px; padding: 3px; z-index: 12; }
+#mm canvas { display: block; width: 95px; height: 95px; }
+
+/* Top Center: Race position & Lap (1 lap race) */
+#tl { left: 50%; transform: translateX(-50%); top: 12px; text-align: center; font-size: 11px; letter-spacing: 1px; white-space: nowrap; }
+#tl b { font-size: 20px; font-style: italic; color: var(--ac); }
+
+/* Top Right: Speed, Gear & RPM gauge */
+#sp { right: 12px; top: 12px; text-align: right; min-width: 125px; }
+#spd { font-size: 34px; font-weight: 800; font-style: italic; line-height: 1; font-variant-numeric: tabular-nums; }
+#unit { font-size: 9px; opacity: .7; letter-spacing: .15em; }
+#gear { font-size: 18px; font-weight: 800; color: var(--ac2); }
+.bar { height: 4px; background: rgba(255,255,255,.15); border-radius: 3px; overflow: hidden; margin-top: 3px; }
 .bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #35e0ff, #ff3ea5); transition: width 0.05s linear; }
-#nt { left: 50%; transform: translateX(-50%); bottom: 14px; width: min(280px, 35vw); font-size: 10px; letter-spacing: .2em; }
+
+/* Above Joystick (Left): Nitro Bar & Timer */
+#nt { left: 12px; bottom: 145px; width: 135px; font-size: 9px; letter-spacing: 1px; }
 #nit i { background: linear-gradient(90deg, #6d5bff, #35e0ff); }
-#mm { left: 14px; bottom: 14px; padding: 4px; }
-#mm canvas { display: block; width: 130px; height: 130px; }
+#tr { left: 12px; bottom: 185px; font-size: 10px; font-variant-numeric: tabular-nums; width: 135px; }
+
 #msg {
   left: 50%;
-  top: 30%;
+  top: 38%;
   transform: translateX(-50%);
-  font-size: clamp(50px, 12vw, 130px);
+  font-size: clamp(45px, 12vw, 110px);
   font-weight: 900;
   font-style: italic;
   text-shadow: 0 0 30px var(--ac);
@@ -121,14 +133,15 @@ button:active { transform: skewX(-10deg) scale(0.96); }
   border: 0;
   backdrop-filter: none;
   padding: 0;
+  text-align: center;
 }
-#warn { left: 50%; top: 18%; transform: translateX(-50%); color: #ff5470; font-weight: 800; letter-spacing: .2em; background: rgba(40,0,10,.7); }
-#fx { position: fixed; inset: 0; pointer-events: none; box-shadow: inset 0 0 160px 30px rgba(80,120,255,.8); opacity: 0; z-index: 5; }
-#fps { position: fixed; left: 50%; top: 4px; transform: translateX(-50%); font: 11px monospace; opacity: .7; z-index: 20; }
-table { border-collapse: collapse; font-size: 15px; }
-td { padding: 4px 12px; }
+#warn { left: 50%; top: 22%; transform: translateX(-50%); color: #ff5470; font-weight: 800; letter-spacing: 1.5px; font-size: 11px; background: rgba(40,0,10,.8); padding: 4px 10px; border-radius: 6px; }
+#fx { position: fixed; inset: 0; pointer-events: none; box-shadow: inset 0 0 140px 25px rgba(80,120,255,.8); opacity: 0; z-index: 5; }
+#fps { position: fixed; right: 12px; bottom: 8px; font: 10px monospace; opacity: .6; z-index: 20; }
+table { border-collapse: collapse; font-size: 14px; width: 100%; max-width: 400px; }
+td { padding: 4px 8px; border-bottom: 1px solid rgba(255,255,255,.1); }
 
-/* Interactive On-Screen Touch / Mouse Controller Elements (Always visible for easy play) */
+/* Non-Overlapping Touch Controller Elements */
 #touch-controls {
   position: fixed;
   inset: 0;
@@ -139,40 +152,41 @@ td { padding: 4px 12px; }
   position: absolute;
   pointer-events: auto;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.15);
-  border: 2px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.12);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: 14px;
+  font-size: 13px;
   letter-spacing: 1px;
   color: var(--tx);
   user-select: none;
   -webkit-user-select: none;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
 }
 .t-btn:active, .t-btn.pressed {
-  background: rgba(53, 224, 255, 0.45);
+  background: rgba(53, 224, 255, 0.4);
   border-color: var(--ac);
-  box-shadow: 0 0 20px var(--ac);
+  box-shadow: 0 0 18px var(--ac);
 }
-#btn-accel { right: 30px; bottom: 150px; width: 80px; height: 80px; font-size: 16px; }
-#btn-brake { right: 130px; bottom: 90px; width: 70px; height: 70px; }
-#btn-nitro  { right: 30px; bottom: 50px; width: 70px; height: 70px; background: rgba(255,62,165,0.25); border-color: rgba(255,62,165,0.6); color: var(--ac2); }
-#btn-drift  { left: 140px; bottom: 50px; width: 70px; height: 70px; }
+/* Right Side Pedals & Actions (Arranged comfortably for right thumb) */
+#btn-accel { right: 20px; bottom: 130px; width: 76px; height: 76px; font-size: 15px; }
+#btn-brake { right: 105px; bottom: 85px; width: 64px; height: 64px; font-size: 12px; }
+#btn-nitro  { right: 20px; bottom: 40px; width: 68px; height: 68px; background: rgba(255,62,165,0.22); border-color: rgba(255,62,165,0.5); color: var(--ac2); font-size: 12px; }
+#btn-drift  { right: 100px; bottom: 20px; width: 56px; height: 56px; font-size: 11px; }
 
-/* Virtual Joystick for steering */
+/* Virtual Joystick for Steering (Bottom Left) */
 #joystick-base {
   position: absolute;
-  left: 25px;
-  bottom: 25px;
+  left: 20px;
+  bottom: 20px;
   width: 110px;
   height: 110px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.1);
-  border: 2px solid rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.08);
+  border: 2px solid rgba(255,255,255,0.25);
   pointer-events: auto;
   backdrop-filter: blur(6px);
   box-shadow: 0 4px 15px rgba(0,0,0,0.4);
@@ -195,18 +209,18 @@ td { padding: 4px 12px; }
 <div id="fx"></div>
 <div id="fps" class="hide"></div>
 
-<!-- HUD Elements -->
+<!-- Mobile-Optimized HUD Elements -->
 <div id="hud" class="hide">
- <div class="pn" id="tl">POS <b id="pos">1</b>/<span id="tot">4</span> &nbsp; LAP <b id="lap">1</b>/3</div>
- <div class="pn" id="tr">TIME <span id="time">0:00.000</span><br>LAP <span id="lt">0:00.000</span><br>BEST <span id="best">--</span></div>
- <div class="pn" id="mm"><canvas id="mmc" width="130" height="130"></canvas></div>
+ <div class="pn" id="mm"><canvas id="mmc" width="95" height="95"></canvas></div>
+ <div class="pn" id="tl">POS <b id="pos">1</b>/<span id="tot">4</span> &nbsp; LAP <b id="lap">1</b>/1</div>
+ <div class="pn" id="tr">TIME <span id="time">0:00.000</span><br>BEST <span id="best">--</span></div>
  <div class="pn" id="nt">NITRO<div class="bar" id="nit"><i></i></div></div>
  <div class="pn" id="sp"><div id="spd">0</div><div id="unit">KM/H</div><div>GEAR <span id="gear">N</span></div><div class="bar" id="rpm"><i></i></div></div>
  <div class="pn hide" id="warn">WRONG WAY</div>
  <div class="pn" id="msg"></div>
 </div>
 
-<!-- On-Screen Virtual Controls for Touch / Mouse Devices -->
+<!-- Touch Controller Interface -->
 <div id="touch-controls">
   <div id="joystick-base">
     <div id="joystick-stick"></div>
@@ -220,7 +234,7 @@ td { padding: 4px 12px; }
 <!-- Menu Overlay -->
 <div id="menu" class="ov">
  <h1>APEX<span>NIGHTS</span></h1>
- <p class="sub">Neon City Circuit · 3 Laps</p>
+ <p class="sub">Neon City Circuit · 1 Lap Sprint</p>
  <div class="row">
   <label>Opponents<select id="sO"><option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option></select></label>
   <label>AI Difficulty<select id="sD"><option>easy</option><option selected>medium</option><option>hard</option></select></label>
@@ -228,11 +242,11 @@ td { padding: 4px 12px; }
   <label>Speed Unit<select id="sU"><option value="kmh">km/h</option><option value="mph">mph</option></select></label>
   <label>Volume<input type="range" id="sV" min="0" max="1" step=".05" value=".6"></label>
  </div>
- <p class="sub" style="margin-top:6px;">Paint Color</p>
+ <p class="sub" style="margin-top:4px;">Paint Color</p>
  <div class="sw" id="sw"></div>
  <br>
  <button id="go">START RACE</button>
- <p class="help">Use the on-screen Virtual Joystick (left) & Gas/Nitro/Drift buttons (right), or Keyboard (W/A/S/D or Arrow keys, Space for Drift, Shift for Nitro). C = Camera, R = Reset.</p>
+ <p class="help">Use Left Virtual Joystick to steer and Right Buttons (GAS / NITRO / DRIFT) to race! Also supports keyboard & gamepads.</p>
 </div>
 
 <!-- Pause Overlay -->
@@ -249,7 +263,7 @@ td { padding: 4px 12px; }
 <div id="end" class="ov hide">
   <h2 id="eh">FINISH</h2>
   <table id="et"></table>
-  <div class="row">
+  <div class="row" style="margin-top:10px;">
     <button id="ry">RETRY</button>
     <button id="em" class="alt">MAIN MENU</button>
   </div>
@@ -331,13 +345,13 @@ function makeCar(col,isP){
  if(isP){const sp=new THREE.SpotLight(0xcfe0ff,2.2,140,.55,.6);sp.position.set(0,.8,2);sp.target.position.set(0,0,30);g.add(sp,sp.target)}
  scene.add(g);return{g,wheels,tl,fl}}
 
-let cars=[], P=null, state='menu', paused=false, cdT=0, raceT=0, lapStart=0, finCount=0, shake=0, camMode=0, snap=true, msgT=0, tm=0, hitT=0;
+let cars=[], P=null, state='menu', paused=false, cdT=0, raceT=0, finCount=0, shake=0, camMode=0, snap=true, msgT=0, tm=0, hitT=0;
 function setup(){
- cars.forEach(c=>scene.remove(c.m.g)); cars=[]; finCount=0; raceT=0; lapStart=0;
+ cars.forEach(c=>scene.remove(c.m.g)); cars=[]; finCount=0; raceT=0;
  const n=S.opp+1;
  for(let k=0; k<n; k++){
   const isP=k==n-1, idx=40-k*3, lat=k%2?3.5:-3.5, p=pts[idx];
-  const c={m:makeCar(isP?COLORS[S.color]:COLORS[(S.color+1+k)%6],isP), x:p.x+sid[idx].x*lat, z:p.z+sid[idx].z*lat, h:hd[idx], vx:0, vz:0, vf:0, vl:0, st:0, roll:0, pitch:0, pvf:0, nitro:60, cool:false, nOn:false, th:0, br:0, rpm:1000, gear:1, idx, lap:0, laps:[], finished:false, place:0, ai:!isP,
+  const c={m:makeCar(isP?COLORS[S.color]:COLORS[(S.color+1+k)%6],isP), x:p.x+sid[idx].x*lat, z:p.z+sid[idx].z*lat, h:hd[idx], vx:0, vz:0, vf:0, vl:0, st:0, roll:0, pitch:0, pvf:0, nitro:60, cool:false, nOn:false, th:0, br:0, rpm:1000, gear:1, idx, lap:0, finished:false, place:0, ai:!isP,
    skill:{easy:.78,medium:.88,hard:.97}[S.diff]*(.97+Math.random()*.06), lane:(k%3-1)*4.5, still:0, rank:k+1, prog:0};
   cars.push(c); if(isP) P=c;
  }
@@ -378,8 +392,7 @@ function trk(c){
 }
 
 function lapDone(c){
- if(c===P){const t=raceT-lapStart; lapStart=raceT; c.laps.push(t); if(best==null||t<best){best=t; save()}}
- if(c.lap>=3&&!c.finished){c.finished=true; c.place=++finCount; c.finT=raceT; if(c===P) setTimeout(showEnd,1500)}
+ if(c.lap>=1&&!c.finished){c.finished=true; c.place=++finCount; c.finT=raceT; if(c===P) setTimeout(showEnd,1500)}
 }
 
 function aiIn(c){
@@ -402,7 +415,6 @@ function playerIn(){
  let hb=!!keys.Space;
  let nit=!!(keys.ShiftLeft||keys.ShiftRight);
 
- // Merge active touch inputs
  if(touchInput.th > th) th = touchInput.th;
  if(touchInput.br > br) br = touchInput.br;
  if(Math.abs(touchInput.steer) > Math.abs(steer)) steer = touchInput.steer;
@@ -470,7 +482,7 @@ function audioUpd(){
  A.m.gain.value=A.mute?0:S.vol;
 }
 
-/* ---------- Camera & HUD ---------- */
+/* ---------- Camera ---------- */
 function cam(dt){
  const c=P; if(!c) return; const fx=Math.sin(c.h), fz=Math.cos(c.h), sp=Math.abs(c.vf); let fov=68;
  c.m.g.visible=true;
@@ -486,29 +498,30 @@ function cam(dt){
  sky.position.copy(camera.position);
 }
 
-const mmc=$('#mmc').getContext('2d'), mmb=document.createElement('canvas'); mmb.width=mmb.height=130;
+/* ---------- Minimap & HUD ---------- */
+const mmc=$('#mmc').getContext('2d'), mmb=document.createElement('canvas'); mmb.width=mmb.height=95;
 let mb={};
 {
  let a=1e9,b=-1e9,c=1e9,d=-1e9; pts.forEach(p=>{a=Math.min(a,p.x);b=Math.max(b,p.x);c=Math.min(c,p.z);d=Math.max(d,p.z)});
- mb={cx:(a+b)/2, cz:(c+d)/2, s:110/Math.max(b-a,d-c)};
- const x=mmb.getContext('2d'); x.strokeStyle='rgba(255,255,255,.6)'; x.lineWidth=4; x.beginPath();
+ mb={cx:(a+b)/2, cz:(c+d)/2, s:80/Math.max(b-a,d-c)};
+ const x=mmb.getContext('2d'); x.strokeStyle='rgba(255,255,255,.6)'; x.lineWidth=3; x.beginPath();
  pts.forEach((p,i)=>{const q=mp(p.x,p.z); i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1])}); x.closePath(); x.stroke();
 }
-function mp(x,z){return[(x-mb.cx)*mb.s+65,(z-mb.cz)*mb.s+65]}
+function mp(x,z){return[(x-mb.cx)*mb.s+47.5,(z-mb.cz)*mb.s+47.5]}
 function hud(){
- const ord=['','1st','2nd','3rd','4th','5th','6th'], u=S.units=='kmh'?3.6:2.237;
- $('#pos').textContent=P.rank; $('#lap').textContent=Math.min(P.lap+1,3);
- $('#time').textContent=fmt(raceT); $('#lt').textContent=fmt(raceT-lapStart); $('#best').textContent=fmt(best);
+ const u=S.units=='kmh'?3.6:2.237;
+ $('#pos').textContent=P.rank; $('#lap').textContent=Math.min(P.lap+1,1);
+ $('#time').textContent=fmt(raceT); $('#best').textContent=fmt(best);
  $('#spd').textContent=Math.round(Math.abs(P.vf)*u); $('#unit').textContent=S.units=='kmh'?'KM/H':'MPH';
  $('#gear').textContent=P.gear<0?'R':Math.abs(P.vf)<.5?'N':P.gear;
  $('#rpm i').style.width=clamp((P.rpm-1000)/7000,0,1)*100+'%'; $('#nit i').style.width=P.nitro+'%';
  const wrong=state=='race'&&(P.vx*tan[P.idx].x+P.vz*tan[P.idx].z)<-3; show('#warn',wrong||hitT>0); $('#warn').textContent=hitT>0?'COLLISION':'WRONG WAY';
- mmc.clearRect(0,0,130,130); mmc.drawImage(mmb,0,0);
- cars.forEach(c=>{const q=mp(c.x,c.z); mmc.fillStyle=c===P?'#35e0ff':'#ff5470'; mmc.beginPath(); mmc.arc(q[0],q[1],c===P?5:3.5,0,TAU); mmc.fill()});
+ mmc.clearRect(0,0,95,95); mmc.drawImage(mmb,0,0);
+ cars.forEach(c=>{const q=mp(c.x,c.z); mmc.fillStyle=c===P?'#35e0ff':'#ff5470'; mmc.beginPath(); mmc.arc(q[0],q[1],c===P?4:2.5,0,TAU); mmc.fill()});
 }
 function showEnd(){
  const o=['','1st','2nd','3rd','4th','5th','6th']; $('#eh').textContent='FINISHED '+o[P.place];
- $('#et').innerHTML='<tr><td>Total time</td><td>'+fmt(P.finT)+'</td></tr>'+P.laps.map((t,i)=>'<tr><td>Lap '+(i+1)+'</td><td>'+fmt(t)+'</td></tr>').join('')+'<tr><td>Best lap (saved)</td><td>'+fmt(best)+'</td></tr>';
+ $('#et').innerHTML='<tr><td>Total time</td><td>'+fmt(P.finT)+'</td></tr><tr><td>Best lap (saved)</td><td>'+fmt(best)+'</td></tr>';
  show('#end',true);
 }
 
@@ -527,7 +540,7 @@ function update(dt){
  if(state=='count'){
   cdT-=dt; const n=Math.ceil(cdT);
   if(n!=lastN&&n>0){lastN=n; beep(520,.15); $('#msg').textContent=n}
-  if(cdT<=0){state='race'; beep(900,.5); $('#msg').textContent='GO!'; msgT=.9; raceT=0; lapStart=0}
+  if(cdT<=0){state='race'; beep(900,.5); $('#msg').textContent='GO!'; msgT=.9; raceT=0;}
  }
  if(state=='race'&&msgT>0){msgT-=dt; if(msgT<=0) $('#msg').textContent=''}
  if(state=='menu'){cars.forEach(c=>sync(c,dt)); return;}
@@ -551,10 +564,10 @@ function loop(now){
  if(!paused) update(dt);
  cam(dt); audioUpd(); R.render(scene,camera);
  fN++; fT+=dt;
- if(fT>=.5){if(fpsOn)$('#fps').textContent=Math.round(fN/fT)+' FPS · '+R.info.render.calls+' calls'; fN=0; fT=0;}
+ if(fT>=.5){if(fpsOn)$('#fps').textContent=Math.round(fN/fT)+' FPS'; fN=0; fT=0;}
 }
 
-/* ---------- Input Listeners & Virtual Controls ---------- */
+/* ---------- Input & Touch Controller Binding ---------- */
 const GK=['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','ShiftLeft','ShiftRight'];
 addEventListener('keydown',e=>{if(GK.includes(e.code))e.preventDefault();if(e.repeat)return;keys[e.code]=true;
  if(e.code=='KeyC'&&state!='menu')camMode=(camMode+1)%3;
@@ -566,9 +579,9 @@ addEventListener('keyup',e=>keys[e.code]=false);
 window.addEventListener('blur',()=>{for(const k in keys)keys[k]=false});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){for(const k in keys)keys[k]=false}});
 
-/* Virtual Joystick Setup (Supports both Touch & Mouse Drag) */
+/* Virtual Joystick Setup */
 const jBase=$('#joystick-base'), jStick=$('#joystick-stick');
-let jActive=false, jCenter={x:0, y:0}, jRadius=40;
+let jActive=false, jCenter={x:0, y:0}, jRadius=38;
 
 function updateJoystickCenter(){
  const rect=jBase.getBoundingClientRect();
@@ -576,30 +589,24 @@ function updateJoystickCenter(){
 }
 
 jBase.addEventListener('pointerdown', e=>{
- e.preventDefault();
- jActive=true;
- updateJoystickCenter();
+ e.preventDefault(); jActive=true; updateJoystickCenter();
  handleJoystickMove(e.clientX, e.clientY);
  jBase.setPointerCapture(e.pointerId);
 });
 
 jBase.addEventListener('pointermove', e=>{
  if(!jActive) return;
- e.preventDefault();
- handleJoystickMove(e.clientX, e.clientY);
+ e.preventDefault(); handleJoystickMove(e.clientX, e.clientY);
 });
 
 jBase.addEventListener('pointerup', e=>{
  if(!jActive) return;
- e.preventDefault();
- jActive=false;
- touchInput.steer=0;
+ e.preventDefault(); jActive=false; touchInput.steer=0;
  jStick.style.transform='translate(0px, 0px)';
 });
 
 jBase.addEventListener('pointercancel', e=>{
- jActive=false;
- touchInput.steer=0;
+ jActive=false; touchInput.steer=0;
  jStick.style.transform='translate(0px, 0px)';
 });
 
@@ -610,10 +617,10 @@ function handleJoystickMove(x, y){
  const clampedDist=Math.min(dist, jRadius);
  const sx=Math.cos(ang)*clampedDist, sy=Math.sin(ang)*clampedDist;
  jStick.style.transform=`translate(${sx}px, ${sy}px)`;
- touchInput.steer=-(sx/jRadius); // Inverted so right steers right, left steers left
+ touchInput.steer=-(sx/jRadius);
 }
 
-/* Touch / Pointer Action Buttons Setup (Gas, Rev, Nitro, Drift) */
+/* Touch Action Buttons Binding */
 const bindTouchBtn=(sel, prop)=>{
  const el=$(sel);
  if(!el) return;
