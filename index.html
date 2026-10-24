@@ -365,10 +365,30 @@ function mpPeers(){if(!MP.room)return;const ps=MP.room.peers().filter(p=>p.kind=
  ps.forEach(p=>{if(p.isMe)return;const g=+p.presence.go||0;if(!(p.peer in MP.go))MP.go[p.peer]=g;else if(g&&g!==MP.go[p.peer]){MP.go[p.peer]=g;if(state=='menu'||(P&&P.finished))begin(MPR,g)}});
  if(state=='menu'&&ps.length!==MP.n){MP.n=ps.length;setup()}
  $('#mpst').textContent='Room "'+MP.code.toUpperCase()+'" · '+ps.length+' player'+(ps.length>1?'s':'')+' · anyone can press START'}
+/* ===== Online multiplayer (Socket.IO) ===== */
+const MP_SERVER=''; /* '' = same server that serves this page. Otherwise e.g. 'https://your-server.onrender.com' */
+function loadIO(){return new Promise((ok,no)=>{if(window.io)return ok();const s=document.createElement('script');s.src=MP_SERVER+'/socket.io/socket.io.js';s.onload=ok;s.onerror=()=>no({code:'server unreachable'});document.head.appendChild(s)})}
+async function makeRoom(name){
+ await loadIO();
+ const sock=io(MP_SERVER||undefined,{transports:['websocket','polling']}),peers=new Map();let cb=null;
+ const fire=()=>{if(cb)cb()};
+ const add=(id,pr)=>peers.set(id,{peer:id,kind:'viewer',isMe:id===sock.id,sameTab:id===sock.id,presence:pr||{}});
+ sock.on('peer-join',d=>{add(d.id,d.presence);fire()});
+ sock.on('peer-leave',d=>{peers.delete(d.id);fire()});
+ sock.on('presence',d=>{const q=peers.get(d.id);if(q){Object.assign(q.presence,d.data);fire()}});
+ await new Promise((ok,no)=>{const t=setTimeout(()=>{sock.close();no({code:'timeout'})},9000);
+  sock.on('connect_error',()=>{clearTimeout(t);sock.close();no({code:'connection failed'})});
+  sock.on('connect',()=>sock.emit('join',name,r=>{clearTimeout(t);if(!r||!r.ok){sock.close();return no({code:r&&r.error||'error'})}
+   peers.clear();r.peers.forEach(q=>add(q.id,q.presence));ok()}))});
+ return{
+  peers:()=>[...peers.values()],
+  presence:async d=>{const me=peers.get(sock.id);if(me)Object.assign(me.presence,d);sock.emit('presence',d)},
+  onPeers:f=>{cb=f},
+  leave:()=>sock.close()}}
 $('#mpj').onclick=async()=>{const code=($('#mpc').value||'').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,8),st=$('#mpst');
  if(!code){st.textContent='Type a room code first (same code on every device).';return}
- try{const room=window.claude&&await claude.use('room');if(!room){st.textContent='Multiplayer is only available when this page is opened from the shared claude.ai link while signed in.';return}
+ try{const room={join:makeRoom};
   const r=await room.join('apex-'+code);if(MP.room&&MP.room!==r)MP.room.leave();MP.room=r;MP.code=code;MP.go={};MP.n=-1;await r.presence({col:S.color});r.onPeers(mpPeers);mpPeers()}
- catch(e){st.textContent='Could not join room ('+(e&&e.code||'error')+').'}};
+ catch(e){st.textContent='Could not join room ('+(e&&e.code||'error')+'). Is the server running?'}};
 applyQ();applyTOD();setup();requestAnimationFrame(loop);
 </script></body></html>
